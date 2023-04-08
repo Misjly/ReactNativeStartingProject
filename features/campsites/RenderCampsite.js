@@ -1,15 +1,42 @@
 import { useRef } from 'react';
 import { StyleSheet, Text, View, PanResponder, Alert } from 'react-native';
-import { Card, Icon } from 'react-native-elements';
+import { Button, Card, Icon, Input, Rating } from 'react-native-elements';
 import { baseUrl } from '../../shared/baseUrl';
 import * as Animatable from 'react-native-animatable';
+import { useState } from 'react';
+import { Modal } from 'react-native';
+import { postComment } from '../comments/commentsSlice';
+import { useDispatch } from 'react-redux';
 
 const RenderCampsite = (props) => {
     const { campsite } = props;
 
     const view = useRef();
+    const [showModal, setShowModal] = useState(false);
+    const [rating, setRating] = useState(5);
+    const [author, setAuthor] = useState('');
+    const [text, setText] = useState('');
+    const dispatch = useDispatch();
 
     const isLeftSwipe = ({ dx }) => dx < -200;
+    const isRightSwipe = ({ dx }) => dx > 200;
+    
+    const resetForm = () => {
+        setRating(5);
+        setAuthor('');
+        setText('');
+    };
+    
+    const handleSubmit = () => {
+        const newComment = {
+            author,
+            rating,
+            text,
+            campsiteId: campsite.id
+        };
+        dispatch(postComment(newComment));
+        setShowModal(!showModal);
+    };
 
     const panResponder = PanResponder.create({
         onStartShouldSetPanResponder: () => true,
@@ -45,6 +72,10 @@ const RenderCampsite = (props) => {
                     { cancelable: false }
                 );
             }
+            else if (isRightSwipe(gestureState)) {
+                setShowModal(!showModal);
+                resetForm();
+            }
         }
     });
 
@@ -57,6 +88,56 @@ const RenderCampsite = (props) => {
                 ref={view}
                 {...panResponder.panHandlers}
             >
+                <Modal
+                        animationType='slide'
+                        transparent={false}
+                        visible={showModal}
+                        onRequestClose={() => setShowModal(!showModal)}
+                >
+                    <View style={styles.modal}>
+                        <Rating
+                            showRating
+                            startingValue={rating}
+                            imageSize={40}
+                            onFinishRating={(rating) => setRating(rating)}
+                            style={{ paddingVertical: 10 }}
+                        />
+                        <Input
+                            placeholder='Author'
+                            leftIcon={{ type: 'font-awesome', name: 'user-o' }}
+                            leftIconContainerStyle={{ paddingRight: 10 }}
+                            onChangeText={(author) => setAuthor(author)}
+                            value={author}
+                        />
+                        <Input
+                            placeholder='Comment'
+                            leftIcon={{ type: 'font-awesome', name: 'comment-o' }}
+                            leftIconContainerStyle={{ paddingRight: 10 }}
+                            onChangeText={(text) => setText(text)}
+                            value={text}
+                        />
+                        <View style={{ margin: 10 }}>
+                            <Button
+                                onPress={() => {
+                                    handleSubmit();
+                                    resetForm();
+                                }}
+                                buttonStyle={{backgroundColor: '#5637DD'}}
+                                title='Submit'
+                            />
+                        </View>
+                        <View style={{ margin: 10 }}>
+                            <Button
+                                onPress={() => {
+                                    setShowModal(!showModal);
+                                    resetForm();
+                                }}
+                                buttonStyle={{backgroundColor: '#808080'}}
+                                title='Cancel'
+                            />
+                        </View>
+                    </View>
+                </Modal>
                 <Card containerStyle={styles.cardContainer}>
                     <Card.Image source={{ uri: baseUrl + campsite.image }}>
                         <View style={{ justifyContent: 'center', flex: 1 }}>
@@ -113,6 +194,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: 'white',
         fontSize: 20
+    },
+    modal: {
+        justifyContent: 'center',
+        margin: 20
     }
 });
 
