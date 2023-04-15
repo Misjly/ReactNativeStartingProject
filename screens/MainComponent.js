@@ -239,19 +239,20 @@ const Main = () => {
         dispatch(fetchComments());
     }, [dispatch]);
 
-    useEffect(() => {
-        NetInfo.fetch().then((connectionInfo) => {
-            Platform.OS === 'ios'
-                ? Alert.alert(
-                      'Initial Network Connectivity Type:',
-                      connectionInfo.type
-                  )
-                : ToastAndroid.show(
-                      'Initial Network Connectivity Type: ' +
-                          connectionInfo.type,
-                      ToastAndroid.LONG
-                  );
-        });
+    const showNetInfo = async () => {
+        const connectionInfo = await NetInfo.fetch();
+        
+        Platform.OS === 'ios'
+            ? Alert.alert(
+                    'Initial Network Connectivity Type:',
+                    connectionInfo.type
+                )
+            : ToastAndroid.show(
+                    'Initial Network Connectivity Type: ' +
+                        connectionInfo.type,
+                    ToastAndroid.LONG
+                );
+        
 
         const unsubscribeNetInfo = NetInfo.addEventListener(
             (connectionInfo) => {
@@ -260,6 +261,10 @@ const Main = () => {
         );
 
         return unsubscribeNetInfo;
+    }
+
+    useEffect(() => {
+        showNetInfo();
     }, []);
 
     const handleConnectivityChange = (connectionInfo) => {
